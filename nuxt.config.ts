@@ -59,12 +59,12 @@ export default defineNuxtConfig({
   },
 
   llms: {
-    domain: 'https://docs-template.nuxt.dev/',
-    title: 'Nuxt Docs Template',
-    description: 'A template for building documentation with Nuxt UI and Nuxt Content.',
+    domain: 'https://docs.h2oflows.app/',
+    title: 'H2OFlows Docs',
+    description: 'Documentation for H2OFlows — streamflow data platform for whitewater paddlers.',
     full: {
-      title: 'Nuxt Docs Template - Full Documentation',
-      description: 'This is the full documentation for the Nuxt Docs Template.'
+      title: 'H2OFlows — Full Documentation',
+      description: 'Complete documentation for H2OFlows: dashboard, flow bands, reach pages, KMZ import, and developer reference.'
     },
     sections: [
       {
@@ -75,17 +75,24 @@ export default defineNuxtConfig({
         ]
       },
       {
-        title: 'Essentials',
+        title: 'Features',
         contentCollection: 'docs',
         contentFilters: [
-          { field: 'path', operator: 'LIKE', value: '/essentials%' }
+          { field: 'path', operator: 'LIKE', value: '/features%' }
+        ]
+      },
+      {
+        title: 'Developer',
+        contentCollection: 'docs',
+        contentFilters: [
+          { field: 'path', operator: 'LIKE', value: '/developer%' }
         ]
       }
     ]
   },
 
   mcp: {
-    name: 'Docs template'
+    name: 'H2OFlows Docs'
   },
 
   ogImage: {
