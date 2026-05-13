@@ -1,0 +1,12 @@
+[build]
+  command = "npm run generate"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+  NODE_OPTIONS = "--max-old-space-size=3072"
+
+[[redirects]]
+  from   = "/*"
+  to     = "/200.html"
+  status = 200
