@@ -13,7 +13,7 @@ orientation: horizontal
 Streamflow data for [whitewater paddlers]{.text-primary}.
 
 #description
-H2OFlows is a free, open source gauge dashboard built by paddlers. Monitor your favorite rivers, set flow alerts, and explore reach data — all in one place.
+H2OFlows is a free, open source gauge dashboard built by paddlers. Monitor your favorite rivers, set flow alerts, and explore run data — all in one place.
 
 #links
   :::u-button
@@ -70,7 +70,7 @@ Everything you need to check the river
   icon: i-lucide-map-pin
   ---
   #title
-  Reach Pages
+  Run Pages
 
   #description
   Put-in and take-out coordinates, rapid inventory, access notes, and current conditions — all tied to live gauge data.
@@ -95,7 +95,7 @@ Everything you need to check the river
   KMZ Import
 
   #description
-  Build a reach in Google My Maps and import it directly. The importer reads pin prefixes and folder names — no SQL required.
+  Build a run in Google My Maps and import it directly. The importer reads pin prefixes and folder names — no SQL required.
   :::
 
   :::u-page-feature
@@ -106,7 +106,7 @@ Everything you need to check the river
   Public API
 
   #description
-  All reach and gauge data is freely accessible via API. Build your own tools on top of the H2OFlows data layer.
+  All run and gauge data is freely accessible via API. Build your own tools on top of the H2OFlows data layer.
   :::
 ::
 

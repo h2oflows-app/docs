@@ -1,0 +1,272 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://h2oflows.app/specs/reach-ingest-v1.schema.json",
+  "title": "H2OFlows Reach Ingest v1",
+  "description": "Public interoperability schema for pushing reach (river run) data into H2OFlows. Designed for partner data providers such as American Whitewater. Scope v1: geometry + map features + descriptions/rapids/access. Out of scope v1: photos, trip reports, user-generated content (gated to v2).",
+  "type": "object",
+  "required": ["reaches"],
+  "properties": {
+    "source": {
+      "type": "string",
+      "description": "Partner slug for attribution and conflict tracking. Examples: 'aw', 'cdec', 'partner:foo'. Assigned by H2OFlows on partner onboarding.",
+      "pattern": "^[a-z][a-z0-9_:-]{1,32}$"
+    },
+    "submitted_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp the partner generated this payload. Optional; H2OFlows defaults to ingest time."
+    },
+    "reaches": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/Reach" }
+    }
+  },
+  "$defs": {
+    "Reach": {
+      "type": "object",
+      "required": ["name", "geometry", "class_max", "region"],
+      "additionalProperties": false,
+      "properties": {
+        "external_id": {
+          "type": ["string", "integer"],
+          "description": "Stable identifier in the partner's system. Used for idempotent upsert. Example: AW reach ID."
+        },
+        "external_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Partner-side detail URL. Rendered on the reach page as 'Also on {partner}'."
+        },
+        "name": {
+          "type": "string",
+          "description": "Canonical run name. Combined with put-in/take-out if present, e.g. 'Browns Canyon (Hecla Junction to Stone Bridge)'.",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "common_name": {
+          "type": ["string", "null"],
+          "description": "Short colloquial name if different from `name`. Optional. Example: 'Browns'.",
+          "maxLength": 100
+        },
+        "river_name": {
+          "type": ["string", "null"],
+          "description": "River the reach is on. If omitted, H2OFlows derives via GNIS reverse lookup on put-in coord.",
+          "maxLength": 200
+        },
+        "region": {
+          "type": "string",
+          "description": "US state postal code (uppercase 2-letter). Required for v1.",
+          "pattern": "^[A-Z]{2}$"
+        },
+        "basin": {
+          "type": ["string", "null"],
+          "description": "Drainage basin name. If omitted, H2OFlows derives via PostGIS containment against HUC8 basins."
+        },
+        "class_max": {
+          "type": "number",
+          "description": "Hardest rapid class on the run, as float. e.g. 3.5 for III+, 4 for IV. Values 0-6.",
+          "minimum": 0,
+          "maximum": 6
+        },
+        "class_at_high": {
+          "type": ["number", "null"],
+          "description": "Optional: hardest class at high water.",
+          "minimum": 0,
+          "maximum": 6
+        },
+        "description": {
+          "type": ["string", "null"],
+          "description": "Markdown-formatted run description.",
+          "maxLength": 20000
+        },
+        "permit_required": {
+          "type": "boolean",
+          "default": false
+        },
+        "multi_day_days": {
+          "type": ["integer", "null"],
+          "description": "If multi-day, number of days. Null/omit for single-day runs.",
+          "minimum": 1
+        },
+        "length_mi": {
+          "type": ["number", "null"],
+          "description": "Run length in miles. If omitted, H2OFlows derives from geometry."
+        },
+        "gradient_fpm": {
+          "type": ["number", "null"],
+          "description": "Average gradient in feet per mile. If omitted, H2OFlows derives from elevation profile lookup."
+        },
+        "geometry": {
+          "$ref": "#/$defs/LineString",
+          "description": "GeoJSON LineString of the run centerline, ordered put-in → take-out. Coordinates are [lng, lat]. WGS84. First coord = put-in, last coord = take-out."
+        },
+        "comids": {
+          "type": ["array", "null"],
+          "description": "Optional list of NHDPlus ComIDs traversed by the centerline, in upstream→downstream order. If omitted, H2OFlows derives via NLDI flowline trace.",
+          "items": { "type": "integer" }
+        },
+        "put_in_name": {
+          "type": ["string", "null"],
+          "maxLength": 100
+        },
+        "take_out_name": {
+          "type": ["string", "null"],
+          "maxLength": 100
+        },
+        "rapids": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Rapid" }
+        },
+        "access": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Access" }
+        },
+        "gauges": {
+          "type": "array",
+          "description": "Gauges associated with this reach. If omitted, H2OFlows proposes nearest USGS gauge within 25 mi of put-in; partner confirms or rejects.",
+          "items": { "$ref": "#/$defs/GaugeAssoc" }
+        },
+        "flow_ranges": {
+          "type": "array",
+          "description": "Flow band thresholds. Three bands: low / running / high. See FlowRange schema for required fields per band.",
+          "items": { "$ref": "#/$defs/FlowRange" }
+        }
+      }
+    },
+    "LineString": {
+      "type": "object",
+      "required": ["type", "coordinates"],
+      "properties": {
+        "type": { "const": "LineString" },
+        "coordinates": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 3,
+            "items": { "type": "number" }
+          }
+        }
+      }
+    },
+    "Point": {
+      "type": "object",
+      "required": ["type", "coordinates"],
+      "properties": {
+        "type": { "const": "Point" },
+        "coordinates": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 3,
+          "items": { "type": "number" }
+        }
+      }
+    },
+    "Rapid": {
+      "type": "object",
+      "required": ["name", "geometry"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "maxLength": 100 },
+        "geometry": { "$ref": "#/$defs/Point" },
+        "class_rating": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 6
+        },
+        "class_at_high": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 6
+        },
+        "description": { "type": ["string", "null"], "maxLength": 5000 },
+        "is_surf_wave": { "type": "boolean", "default": false },
+        "is_permanent_hazard": { "type": "boolean", "default": false },
+        "hazard_type": {
+          "type": ["string", "null"],
+          "enum": [null, "strainer", "sieve", "low_head_dam", "undercut", "fence_cable", "bridge_pier", "other"]
+        },
+        "portage_description": { "type": ["string", "null"], "maxLength": 2000 },
+        "river_mile": { "type": ["number", "null"] }
+      }
+    },
+    "Access": {
+      "type": "object",
+      "required": ["name", "type", "geometry"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "maxLength": 100 },
+        "type": {
+          "type": "string",
+          "enum": ["put_in", "take_out", "parking", "campsite", "viewpoint", "portage", "other"]
+        },
+        "geometry": { "$ref": "#/$defs/Point" },
+        "description": { "type": ["string", "null"], "maxLength": 5000 },
+        "fee_required": { "type": "boolean", "default": false },
+        "permit_required": { "type": "boolean", "default": false }
+      }
+    },
+    "GaugeAssoc": {
+      "type": "object",
+      "required": ["source", "external_id"],
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "type": "string",
+          "enum": ["usgs", "dwr", "cdec", "ec_canada", "manual"]
+        },
+        "external_id": {
+          "type": "string",
+          "description": "Gauge ID in the source system. USGS = site number (e.g. '07091200'). DWR = abbrev (e.g. 'ARKSALCO')."
+        },
+        "name": {
+          "type": ["string", "null"],
+          "description": "Human-readable gauge name. If omitted, H2OFlows fetches from source."
+        },
+        "lat": { "type": ["number", "null"], "minimum": -90, "maximum": 90 },
+        "lng": { "type": ["number", "null"], "minimum": -180, "maximum": 180 },
+        "is_primary": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether this is the primary flow gauge for the reach. Exactly one gauge per reach should be primary."
+        }
+      }
+    },
+    "FlowRange": {
+      "type": "object",
+      "required": ["label"],
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "type": "string",
+          "enum": ["low", "running", "high"],
+          "description": "Three-band model. `low` = below recommended, `running` = recommended, `high` = above recommended."
+        },
+        "min_value": {
+          "type": ["number", "null"],
+          "description": "CFS threshold lower bound. Required for `running` and `high`. Omit for `low`."
+        },
+        "max_value": {
+          "type": ["number", "null"],
+          "description": "CFS threshold upper bound. Required for `low` and `running`. Omit for `high`."
+        },
+        "verified": { "type": "boolean", "default": false }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "label": { "const": "low" } } },
+          "then": { "required": ["max_value"] }
+        },
+        {
+          "if": { "properties": { "label": { "const": "running" } } },
+          "then": { "required": ["min_value", "max_value"] }
+        },
+        {
+          "if": { "properties": { "label": { "const": "high" } } },
+          "then": { "required": ["min_value"] }
+        }
+      ]
+    }
+  }
+}
